@@ -1,0 +1,6 @@
+[package]
+authors = ["SandWood Jones <sandwoodjones@outlook.com>"]
+edition = "2024"
+name = "even-less-secrets"
+description = "NMS rewritten in Rust"
+version = "0.1.0"
