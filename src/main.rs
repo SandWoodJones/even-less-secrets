@@ -3,15 +3,17 @@ use std::thread;
 use std::time::Duration;
 
 use crossterm::{ExecutableCommand, cursor};
+use unicode_width::UnicodeWidthChar;
 
 #[derive(Debug)]
 struct CharAttr {
     source: char,
     mask: char,
+    width: Option<u16>,
     time: Duration,
 }
 
-fn get_random_mask() -> char {
+fn get_random_char() -> char {
     let char_table = ['!', '\\', '#', '$', '%', '&', '\'', '(', ')', '*'];
     return char_table[fastrand::usize(..char_table.len())];
 }
@@ -43,13 +45,19 @@ fn els_effect(input: &str) {
             break;
         }
 
+        let width = ch.width_cjk().map(|w| w as u16);
+
         char_list.push(CharAttr {
             source: ch,
-            mask: get_random_mask(),
+            mask: get_random_char(),
+            width,
             time: Duration::from_millis(fastrand::u64(0..5000)),
         });
 
-        if ch == '\n' {
+        if let Some(w) = width {
+            cur_col += w;
+        }
+        if ch == '\n' || cur_col > MAX_COLS {
             cur_col = 0;
             cur_row += 1;
             if cur_row == MAX_ROWS + 1 && orig_row > 0 {
@@ -67,6 +75,10 @@ fn els_effect(input: &str) {
         }
 
         print!("{}", ch.mask);
+        if ch.width == Some(2) {
+            print!("{}", get_random_char())
+        }
+
         if let Err(e) = io::stdout().flush() {
             eprintln!("flush failed: {e:?}");
             return;
@@ -87,7 +99,10 @@ fn els_effect(input: &str) {
                 continue;
             }
 
-            print!("{}", get_random_mask());
+            print!("{}", get_random_char());
+            if ch.width == Some(2) {
+                print!("{}", get_random_char())
+            }
         }
 
         if let Err(e) = io::stdout().flush() {
@@ -115,11 +130,11 @@ fn els_effect(input: &str) {
             if !ch.time.is_zero() {
                 if ch.time.as_millis() < 500 {
                     if fastrand::u8(0..3) == 0 {
-                        ch.mask = get_random_mask();
+                        ch.mask = get_random_char();
                     }
                 } else {
                     if fastrand::u8(0..10) == 0 {
-                        ch.mask = get_random_mask();
+                        ch.mask = get_random_char();
                     }
                 }
 
