@@ -4,3 +4,7 @@ edition = "2024"
 name = "even-less-secrets"
 description = "NMS rewritten in Rust"
 version = "0.1.0"
+
+[dependencies]
+crossterm = { version = "0.29.0", default-features = false, features = ["events"] }
+fastrand = "2.3.0"
