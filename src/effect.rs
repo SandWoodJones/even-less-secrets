@@ -1,14 +1,12 @@
 use std::thread;
 use std::time::Duration;
 
+use crossterm::terminal;
 use unicode_width::UnicodeWidthChar;
 
 use crate::CharAttr;
 use crate::charset::get_random_char;
 use crate::termio::{cursor_pos, flush_output, move_cursor};
-
-const MAX_ROWS: u16 = 24;
-const MAX_COLS: u16 = 80;
 
 const EFFECT_SPEED: Duration = Duration::from_millis(40);
 const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
@@ -94,14 +92,16 @@ fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
 pub fn els_effect(input: &str) {
     let mut char_list: Vec<CharAttr> = vec![];
 
+    let terminal_size = terminal::size().unwrap();
+
     let mut orig_cursor_pos = cursor_pos().unwrap();
-    let mut cur_row = orig_cursor_pos.0;
-    let mut cur_col = orig_cursor_pos.1;
+    let mut cur_col = orig_cursor_pos.0;
+    let mut cur_row = orig_cursor_pos.1;
 
     // process input
     for ch in input.chars() {
         // don't go beyond max rows
-        if cur_row - orig_cursor_pos.0 >= MAX_ROWS - 1 {
+        if cur_row - orig_cursor_pos.1 >= terminal_size.1 - 1 {
             break;
         }
 
@@ -117,11 +117,11 @@ pub fn els_effect(input: &str) {
         if let Some(w) = width {
             cur_col += w;
         }
-        if ch == '\n' || cur_col > MAX_COLS {
+        if ch == '\n' || cur_col > terminal_size.0 {
             cur_col = 0;
             cur_row += 1;
-            if cur_row == MAX_ROWS + 1 && orig_cursor_pos.0 > 0 {
-                orig_cursor_pos.0 -= 1;
+            if cur_row == terminal_size.1 + 1 && orig_cursor_pos.1 > 0 {
+                orig_cursor_pos.1 -= 1;
                 cur_row -= 1;
             }
         }
