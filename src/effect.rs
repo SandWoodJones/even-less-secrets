@@ -118,7 +118,7 @@ pub fn els_effect(input: &str) {
         if ch == '\n' || cur_col > terminal_size.0 {
             cur_col = 0;
             cur_row += 1;
-            if cur_row == terminal_size.1 + 1 && orig_cursor_pos.1 > 0 {
+            if cur_row == terminal_size.1 && orig_cursor_pos.1 != 0 {
                 orig_cursor_pos.1 -= 1;
                 cur_row -= 1;
             }
