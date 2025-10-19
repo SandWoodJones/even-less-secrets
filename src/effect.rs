@@ -77,6 +77,10 @@ fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
                 }
 
                 print!("{}", ch.mask);
+                if ch.width == Some(2) {
+                    print!("{}", get_random_char())
+                }
+
                 ch.time = ch.time.saturating_sub(REVEAL_LOOP_SPEED);
                 reveal_complete = false;
             } else {
