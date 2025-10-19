@@ -2,9 +2,8 @@ use std::thread;
 use std::time::Duration;
 
 use crossterm::terminal;
-use unicode_width::UnicodeWidthChar;
 
-use crate::CharAttr;
+use crate::char_attr::CharAttr;
 use crate::charset::get_random_char;
 use crate::termio::{cursor_pos, flush_output, move_cursor};
 
@@ -109,18 +108,13 @@ pub fn els_effect(input: &str) {
             break;
         }
 
-        let width = ch.width_cjk().map(|w| w as u16);
-
-        char_list.push(CharAttr {
-            source: ch,
-            mask: get_random_char(),
-            width,
-            time: Duration::from_millis(fastrand::u64(0..5000)),
-        });
-
-        if let Some(w) = width {
+        let attr = CharAttr::new(ch);
+        if let Some(w) = attr.width {
             cur_col += w;
         }
+
+        char_list.push(attr);
+
         if ch == '\n' || cur_col > terminal_size.0 {
             cur_col = 0;
             cur_row += 1;
