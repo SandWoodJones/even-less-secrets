@@ -5,9 +5,10 @@ mod charset;
 mod effect;
 mod termio;
 
-fn main() {
+fn main() -> io::Result<()> {
     let mut input = String::new();
-    io::stdin().read_to_string(&mut input).unwrap();
-    effect::els_effect(input.trim_end());
-    println!()
+    io::stdin().read_to_string(&mut input)?;
+    effect::els_effect(input.trim_end())?;
+    println!();
+    Ok(())
 }

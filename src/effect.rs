@@ -1,5 +1,5 @@
-use std::thread;
 use std::time::Duration;
+use std::{io, thread};
 
 use crossterm::terminal;
 
@@ -12,7 +12,7 @@ const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
 const JUMBLE_LOOP_SPEED: Duration = Duration::from_millis(35);
 const REVEAL_LOOP_SPEED: Duration = Duration::from_millis(50);
 
-fn print_mask(list: &Vec<CharAttr>) {
+fn print_mask(list: &Vec<CharAttr>) -> io::Result<()> {
     for ch in list {
         if ch.source.is_whitespace() {
             print!("{}", ch.source);
@@ -24,15 +24,17 @@ fn print_mask(list: &Vec<CharAttr>) {
             print!("{}", get_random_char())
         }
 
-        flush_output().unwrap();
+        flush_output()?;
 
         thread::sleep(EFFECT_SPEED);
     }
+
+    Ok(())
 }
 
-fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
+fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
     for _ in 0..(JUMBLE_SECONDS.as_millis() / JUMBLE_LOOP_SPEED.as_millis()) {
-        move_cursor(cursor_orig_pos).unwrap();
+        move_cursor(cursor_orig_pos)?;
 
         for ch in list {
             if ch.source.is_whitespace() {
@@ -46,16 +48,18 @@ fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
             }
         }
 
-        flush_output().unwrap();
+        flush_output()?;
 
         thread::sleep(JUMBLE_LOOP_SPEED);
     }
+
+    Ok(())
 }
 
-fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
+fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
     let mut reveal_complete = false;
     while !reveal_complete {
-        move_cursor(cursor_orig_pos).unwrap();
+        move_cursor(cursor_orig_pos)?;
 
         reveal_complete = true;
         for ch in list.iter_mut() {
@@ -87,12 +91,14 @@ fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) {
             }
         }
 
-        flush_output().unwrap();
+        flush_output()?;
         thread::sleep(REVEAL_LOOP_SPEED);
     }
+
+    Ok(())
 }
 
-pub fn els_effect(input: &str) {
+pub fn els_effect(input: &str) -> io::Result<()> {
     let mut char_list: Vec<CharAttr> = vec![];
 
     let terminal_size = terminal::size().unwrap();
@@ -125,7 +131,7 @@ pub fn els_effect(input: &str) {
         }
     }
 
-    print_mask(&char_list);
-    jumble(&char_list, orig_cursor_pos);
-    reveal(&mut char_list, orig_cursor_pos);
+    print_mask(&char_list)?;
+    jumble(&char_list, orig_cursor_pos)?;
+    reveal(&mut char_list, orig_cursor_pos)
 }
