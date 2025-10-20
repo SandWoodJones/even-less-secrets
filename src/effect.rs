@@ -15,7 +15,11 @@ const REVEAL_LOOP_SPEED: Duration = Duration::from_millis(50);
 fn print_mask(list: &Vec<CharAttr>) -> io::Result<()> {
     for ch in list {
         if ch.source.is_whitespace() {
-            print!("{}", ch.source);
+            if ch.source == '\n' {
+                print!("\r\n");
+            } else {
+                print!("{}", ch.source);
+            }
             continue;
         }
 
@@ -38,7 +42,11 @@ fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
 
         for ch in list {
             if ch.source.is_whitespace() {
-                print!("{}", ch.source);
+                if ch.source == '\n' {
+                    print!("\r\n");
+                } else {
+                    print!("{}", ch.source);
+                }
                 continue;
             }
 
@@ -64,7 +72,11 @@ fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<(
         reveal_complete = true;
         for ch in list.iter_mut() {
             if ch.source.is_whitespace() {
-                print!("{}", ch.source);
+                if ch.source == '\n' {
+                    print!("\r\n");
+                } else {
+                    print!("{}", ch.source);
+                }
                 continue;
             }
 

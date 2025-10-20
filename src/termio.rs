@@ -1,6 +1,42 @@
 use std::io::{self, Write};
+use std::thread;
+use std::time::Duration;
 
-use crossterm::{ExecutableCommand, cursor};
+use crossterm::event::{Event, KeyCode, KeyModifiers};
+use crossterm::{ExecutableCommand, event};
+use crossterm::{cursor, terminal};
+
+pub fn enable_raw_mode() -> io::Result<()> {
+    terminal::enable_raw_mode()?;
+    io::stdout().execute(cursor::Hide)?;
+    spawn_event_listener();
+    Ok(())
+}
+
+pub fn disable_raw_mode() -> io::Result<()> {
+    io::stdout().execute(cursor::Show)?;
+    terminal::disable_raw_mode()
+}
+
+fn spawn_event_listener() {
+    thread::spawn(move || {
+        loop {
+            if event::poll(Duration::from_millis(100)).unwrap_or(false) {
+                if let Ok(Event::Key(key_event)) = event::read() {
+                    match key_event.code {
+                        KeyCode::Char('c') | KeyCode::Char('d') | KeyCode::Char('z')
+                            if key_event.modifiers == KeyModifiers::CONTROL =>
+                        {
+                            disable_raw_mode().ok();
+                            std::process::exit(130);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+    });
+}
 
 pub fn flush_output() -> io::Result<()> {
     if let Err(e) = io::stdout().flush() {
