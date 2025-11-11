@@ -2,7 +2,7 @@ use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-use crossterm::event::{Event, KeyCode, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{ExecutableCommand, event};
 use crossterm::{cursor, terminal};
 
@@ -22,20 +22,38 @@ fn spawn_event_listener() {
     thread::spawn(move || {
         loop {
             if event::poll(Duration::from_millis(100)).unwrap_or(false) {
-                if let Ok(Event::Key(key_event)) = event::read() {
-                    match key_event.code {
-                        KeyCode::Char('c') | KeyCode::Char('d') | KeyCode::Char('z')
-                            if key_event.modifiers == KeyModifiers::CONTROL =>
-                        {
-                            disable_raw_mode().ok();
-                            std::process::exit(130);
-                        }
-                        _ => {}
-                    }
+                if let Ok(Event::Key(ev)) = event::read() {
+                    check_interrupt(&ev);
                 }
             }
         }
     });
+}
+
+pub fn wait_for_input() -> io::Result<()> {
+    loop {
+        match event::read()? {
+            Event::Key(ev) => {
+                check_interrupt(&ev);
+                break;
+            }
+            _ => continue,
+        }
+    }
+
+    Ok(())
+}
+
+fn check_interrupt(event: &KeyEvent) {
+    match event.code {
+        KeyCode::Char('c') | KeyCode::Char('d') | KeyCode::Char('z')
+            if event.modifiers == KeyModifiers::CONTROL =>
+        {
+            disable_raw_mode().ok();
+            std::process::exit(130);
+        }
+        _ => {}
+    }
 }
 
 pub fn flush_output() -> io::Result<()> {

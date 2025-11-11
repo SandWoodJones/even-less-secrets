@@ -5,8 +5,9 @@ use crossterm::terminal;
 
 use crate::char_attr::CharAttr;
 use crate::charset::get_random_char;
-use crate::termio::{cursor_pos, flush_output, move_cursor};
+use crate::termio::{cursor_pos, flush_output, move_cursor, wait_for_input};
 
+const AUTODECRYPT_INTERVAL: Duration = Duration::from_secs(1);
 const EFFECT_SPEED: Duration = Duration::from_millis(40);
 const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
 const JUMBLE_LOOP_SPEED: Duration = Duration::from_millis(35);
@@ -110,7 +111,7 @@ fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<(
     Ok(())
 }
 
-pub fn els_effect(input: &str) -> io::Result<()> {
+pub fn els_effect(input: &str, args: crate::Args) -> io::Result<()> {
     let mut char_list: Vec<CharAttr> = vec![];
 
     let terminal_size = terminal::size().unwrap();
@@ -144,6 +145,12 @@ pub fn els_effect(input: &str) -> io::Result<()> {
     }
 
     print_mask(&char_list)?;
+    if args.auto_decrypt {
+        thread::sleep(AUTODECRYPT_INTERVAL)
+    } else {
+        wait_for_input()?;
+    }
+
     jumble(&char_list, orig_cursor_pos)?;
     reveal(&mut char_list, orig_cursor_pos)
 }
