@@ -13,36 +13,67 @@ const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
 const JUMBLE_LOOP_SPEED: Duration = Duration::from_millis(35);
 const REVEAL_LOOP_SPEED: Duration = Duration::from_millis(50);
 
-fn print_mask(list: &Vec<CharAttr>, args: &crate::Args) -> io::Result<()> {
-    for ch in list {
-        if ch.source.is_whitespace() && !args.blank_masks {
-            if ch.source == '\n' {
-                print!("\r\n");
-            } else {
-                print!("{}", ch.source);
-            }
-            continue;
-        }
-
-        print!("{}", ch.mask);
-        if ch.width == Some(2) {
-            print!("{}", get_random_char())
-        }
-
-        flush_output()?;
-
-        thread::sleep(EFFECT_SPEED);
-    }
-
-    Ok(())
+pub struct ElsEffect {
+    args: crate::Args,
+    char_list: Vec<CharAttr>,
+    orig_cursor_pos: (u16, u16),
 }
 
-fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16), args: &crate::Args) -> io::Result<()> {
-    for _ in 0..(JUMBLE_SECONDS.as_millis() / JUMBLE_LOOP_SPEED.as_millis()) {
-        move_cursor(cursor_orig_pos)?;
+impl ElsEffect {
+    pub fn new(input: &str, args: crate::Args) -> io::Result<Self> {
+        let mut char_list: Vec<CharAttr> = vec![];
+        let terminal_size = terminal::size()?;
+        let mut orig_cursor_pos = cursor_pos()?;
 
-        for ch in list {
-            if ch.source.is_whitespace() && !args.blank_masks {
+        let mut cur_col = orig_cursor_pos.0;
+        let mut cur_row = orig_cursor_pos.1;
+
+        // process input
+        for ch in input.chars() {
+            // don't go beyond max rows
+            if cur_row - orig_cursor_pos.1 >= terminal_size.1 - 1 {
+                break;
+            }
+
+            let attr = CharAttr::new(ch);
+            if let Some(w) = attr.width {
+                cur_col += w;
+            }
+
+            char_list.push(attr);
+
+            if ch == '\n' || cur_col > terminal_size.0 {
+                cur_col = 0;
+                cur_row += 1;
+                if cur_row == terminal_size.1 && orig_cursor_pos.1 != 0 {
+                    orig_cursor_pos.1 -= 1;
+                    cur_row -= 1;
+                }
+            }
+        }
+
+        Ok(Self {
+            args,
+            char_list,
+            orig_cursor_pos,
+        })
+    }
+
+    pub fn run(&mut self) -> io::Result<()> {
+        self.print_mask()?;
+        if self.args.auto_decrypt {
+            thread::sleep(AUTODECRYPT_INTERVAL)
+        } else {
+            wait_for_input()?;
+        }
+
+        self.jumble()?;
+        self.reveal()
+    }
+
+    fn print_mask(&self) -> io::Result<()> {
+        for ch in self.char_list.iter() {
+            if ch.source.is_whitespace() && !self.args.blank_masks {
                 if ch.source == '\n' {
                     print!("\r\n");
                 } else {
@@ -51,110 +82,88 @@ fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16), args: &crate::Args)
                 continue;
             }
 
-            print!("{}", get_random_char());
+            print!("{}", ch.mask);
             if ch.width == Some(2) {
                 print!("{}", get_random_char())
             }
+
+            flush_output()?;
+
+            thread::sleep(EFFECT_SPEED);
         }
 
-        flush_output()?;
-
-        thread::sleep(JUMBLE_LOOP_SPEED);
+        Ok(())
     }
 
-    Ok(())
-}
+    fn jumble(&self) -> io::Result<()> {
+        for _ in 0..(JUMBLE_SECONDS.as_millis() / JUMBLE_LOOP_SPEED.as_millis()) {
+            move_cursor(self.orig_cursor_pos)?;
 
-fn reveal(
-    list: &mut Vec<CharAttr>,
-    cursor_orig_pos: (u16, u16),
-    args: &crate::Args,
-) -> io::Result<()> {
-    let mut reveal_complete = false;
-    while !reveal_complete {
-        move_cursor(cursor_orig_pos)?;
-
-        reveal_complete = true;
-        for ch in list.iter_mut() {
-            if ch.source.is_whitespace() && !args.blank_masks {
-                if ch.source == '\n' {
-                    print!("\r\n");
-                } else {
-                    print!("{}", ch.source);
-                }
-                continue;
-            }
-
-            if !ch.time.is_zero() {
-                if ch.time.as_millis() < 500 {
-                    if fastrand::u8(0..3) == 0 {
-                        ch.mask = get_random_char();
+            for ch in self.char_list.iter() {
+                if ch.source.is_whitespace() && !self.args.blank_masks {
+                    if ch.source == '\n' {
+                        print!("\r\n");
+                    } else {
+                        print!("{}", ch.source);
                     }
-                } else {
-                    if fastrand::u8(0..10) == 0 {
-                        ch.mask = get_random_char();
-                    }
+                    continue;
                 }
 
-                print!("{}", ch.mask);
+                print!("{}", get_random_char());
                 if ch.width == Some(2) {
                     print!("{}", get_random_char())
                 }
-
-                ch.time = ch.time.saturating_sub(REVEAL_LOOP_SPEED);
-                reveal_complete = false;
-            } else {
-                print!("{}", ch.source);
             }
+
+            flush_output()?;
+
+            thread::sleep(JUMBLE_LOOP_SPEED);
         }
 
-        flush_output()?;
-        thread::sleep(REVEAL_LOOP_SPEED);
+        Ok(())
     }
 
-    Ok(())
-}
+    fn reveal(&mut self) -> io::Result<()> {
+        let mut reveal_complete = false;
+        while !reveal_complete {
+            move_cursor(self.orig_cursor_pos)?;
 
-pub fn els_effect(input: &str, args: crate::Args) -> io::Result<()> {
-    let mut char_list: Vec<CharAttr> = vec![];
+            reveal_complete = true;
+            for ch in self.char_list.iter_mut() {
+                if ch.source.is_whitespace() && !self.args.blank_masks {
+                    if ch.source == '\n' {
+                        print!("\r\n");
+                    } else {
+                        print!("{}", ch.source);
+                    }
+                    continue;
+                }
 
-    let terminal_size = terminal::size().unwrap();
+                if !ch.time.is_zero() {
+                    if ch.time.as_millis() < 500 {
+                        if fastrand::u8(0..3) == 0 {
+                            ch.mask = get_random_char();
+                        }
+                    } else if fastrand::u8(0..10) == 0 {
+                        ch.mask = get_random_char();
+                    }
 
-    let mut orig_cursor_pos = cursor_pos().unwrap();
-    let mut cur_col = orig_cursor_pos.0;
-    let mut cur_row = orig_cursor_pos.1;
+                    print!("{}", ch.mask);
+                    if ch.width == Some(2) {
+                        print!("{}", get_random_char())
+                    }
 
-    // process input
-    for ch in input.chars() {
-        // don't go beyond max rows
-        if cur_row - orig_cursor_pos.1 >= terminal_size.1 - 1 {
-            break;
-        }
-
-        let attr = CharAttr::new(ch);
-        if let Some(w) = attr.width {
-            cur_col += w;
-        }
-
-        char_list.push(attr);
-
-        if ch == '\n' || cur_col > terminal_size.0 {
-            cur_col = 0;
-            cur_row += 1;
-            if cur_row == terminal_size.1 && orig_cursor_pos.1 != 0 {
-                orig_cursor_pos.1 -= 1;
-                cur_row -= 1;
+                    ch.time = ch.time.saturating_sub(REVEAL_LOOP_SPEED);
+                    reveal_complete = false;
+                } else {
+                    print!("{}", ch.source);
+                }
             }
+
+            flush_output()?;
+            thread::sleep(REVEAL_LOOP_SPEED);
         }
-    }
 
-    print_mask(&char_list, &args)?;
-    if args.auto_decrypt {
-        thread::sleep(AUTODECRYPT_INTERVAL)
-    } else {
-        wait_for_input()?;
+        Ok(())
     }
-
-    jumble(&char_list, orig_cursor_pos, &args)?;
-    reveal(&mut char_list, orig_cursor_pos, &args)
 }
