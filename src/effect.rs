@@ -82,13 +82,14 @@ impl ElsEffect {
 
     fn print_mask(&self) -> io::Result<()> {
         for ch in self.char_list.iter() {
-            if ch.source.is_whitespace() && !self.args.blank_masks {
+            if ch.source.is_whitespace() {
                 if ch.source == '\n' {
                     print!("\r\n");
-                } else {
+                    continue;
+                } else if !self.args.blank_masks {
                     print!("{}", ch.source);
+                    continue;
                 }
-                continue;
             }
 
             print!("{}", ch.mask);
@@ -109,13 +110,14 @@ impl ElsEffect {
             move_cursor(self.orig_cursor_pos)?;
 
             for ch in self.char_list.iter() {
-                if ch.source.is_whitespace() && !self.args.blank_masks {
+                if ch.source.is_whitespace() {
                     if ch.source == '\n' {
                         print!("\r\n");
-                    } else {
+                        continue;
+                    } else if !self.args.blank_masks {
                         print!("{}", ch.source);
+                        continue;
                     }
-                    continue;
                 }
 
                 print!("{}", get_random_char());
@@ -139,13 +141,14 @@ impl ElsEffect {
 
             reveal_complete = true;
             for ch in self.char_list.iter_mut() {
-                if ch.source.is_whitespace() && !self.args.blank_masks {
+                if ch.source.is_whitespace() {
                     if ch.source == '\n' {
                         print!("\r\n");
-                    } else {
+                        continue;
+                    } else if !self.args.blank_masks {
                         print!("{}", ch.source);
+                        continue;
                     }
-                    continue;
                 }
 
                 if !ch.time.is_zero() {
