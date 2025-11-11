@@ -13,9 +13,9 @@ const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
 const JUMBLE_LOOP_SPEED: Duration = Duration::from_millis(35);
 const REVEAL_LOOP_SPEED: Duration = Duration::from_millis(50);
 
-fn print_mask(list: &Vec<CharAttr>) -> io::Result<()> {
+fn print_mask(list: &Vec<CharAttr>, args: &crate::Args) -> io::Result<()> {
     for ch in list {
-        if ch.source.is_whitespace() {
+        if ch.source.is_whitespace() && !args.blank_masks {
             if ch.source == '\n' {
                 print!("\r\n");
             } else {
@@ -37,12 +37,12 @@ fn print_mask(list: &Vec<CharAttr>) -> io::Result<()> {
     Ok(())
 }
 
-fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
+fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16), args: &crate::Args) -> io::Result<()> {
     for _ in 0..(JUMBLE_SECONDS.as_millis() / JUMBLE_LOOP_SPEED.as_millis()) {
         move_cursor(cursor_orig_pos)?;
 
         for ch in list {
-            if ch.source.is_whitespace() {
+            if ch.source.is_whitespace() && !args.blank_masks {
                 if ch.source == '\n' {
                     print!("\r\n");
                 } else {
@@ -65,14 +65,18 @@ fn jumble(list: &Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
     Ok(())
 }
 
-fn reveal(list: &mut Vec<CharAttr>, cursor_orig_pos: (u16, u16)) -> io::Result<()> {
+fn reveal(
+    list: &mut Vec<CharAttr>,
+    cursor_orig_pos: (u16, u16),
+    args: &crate::Args,
+) -> io::Result<()> {
     let mut reveal_complete = false;
     while !reveal_complete {
         move_cursor(cursor_orig_pos)?;
 
         reveal_complete = true;
         for ch in list.iter_mut() {
-            if ch.source.is_whitespace() {
+            if ch.source.is_whitespace() && !args.blank_masks {
                 if ch.source == '\n' {
                     print!("\r\n");
                 } else {
@@ -144,13 +148,13 @@ pub fn els_effect(input: &str, args: crate::Args) -> io::Result<()> {
         }
     }
 
-    print_mask(&char_list)?;
+    print_mask(&char_list, &args)?;
     if args.auto_decrypt {
         thread::sleep(AUTODECRYPT_INTERVAL)
     } else {
         wait_for_input()?;
     }
 
-    jumble(&char_list, orig_cursor_pos)?;
-    reveal(&mut char_list, orig_cursor_pos)
+    jumble(&char_list, orig_cursor_pos, &args)?;
+    reveal(&mut char_list, orig_cursor_pos, &args)
 }
