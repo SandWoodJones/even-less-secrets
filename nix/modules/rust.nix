@@ -21,6 +21,11 @@
           ]
         );
       };
+
       packages.default = self'.packages.even-less-secrets;
+      apps.default = {
+        type = "app";
+        program = "${self'.packages.default}/bin/els";
+      };
     };
 }
