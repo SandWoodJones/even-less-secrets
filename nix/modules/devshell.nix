@@ -17,6 +17,8 @@
             packages = with pkgs; [
               bacon
               omnix
+
+              nms
             ];
 
             RUSTFLAGS="-C link-arg=-fuse-ld=mold";
