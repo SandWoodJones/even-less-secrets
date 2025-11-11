@@ -13,6 +13,7 @@ use crate::{
 mod args;
 mod char_attr;
 mod charset;
+mod color;
 mod effect;
 mod termio;
 

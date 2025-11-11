@@ -4,8 +4,10 @@ use std::time::Duration;
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal::ClearType;
-use crossterm::{ExecutableCommand, event};
+use crossterm::{ExecutableCommand, event, style};
 use crossterm::{cursor, terminal};
+
+use crate::color::Color;
 
 pub fn enable_raw_mode() -> io::Result<()> {
     terminal::enable_raw_mode()?;
@@ -88,6 +90,24 @@ pub fn cursor_pos() -> io::Result<(u16, u16)> {
 pub fn clear_screen() -> io::Result<()> {
     if let Err(e) = io::stdout().execute(terminal::Clear(ClearType::All)) {
         eprintln!("screen clear failed: {e:?}");
+        return Err(e);
+    };
+
+    Ok(())
+}
+
+pub fn set_foreground_color(color: &Color) -> io::Result<()> {
+    if let Err(e) = io::stdout().execute(style::SetForegroundColor(color.0)) {
+        eprintln!("setting foreground color failed: {e:?}");
+        return Err(e);
+    };
+
+    Ok(())
+}
+
+pub fn reset_colors() -> io::Result<()> {
+    if let Err(e) = io::stdout().execute(style::ResetColor) {
+        eprintln!("resetting colors to default failed: {e:?}");
         return Err(e);
     };
 

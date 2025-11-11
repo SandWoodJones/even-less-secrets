@@ -5,7 +5,7 @@ use crossterm::terminal;
 
 use crate::char_attr::CharAttr;
 use crate::charset::get_random_char;
-use crate::termio::{clear_screen, cursor_pos, flush_output, move_cursor, wait_for_input};
+use crate::termio::{clear_screen, cursor_pos, flush_output, move_cursor, reset_colors, set_foreground_color, wait_for_input};
 
 const AUTODECRYPT_INTERVAL: Duration = Duration::from_secs(1);
 const EFFECT_SPEED: Duration = Duration::from_millis(40);
@@ -150,7 +150,9 @@ impl ElsEffect {
                     ch.time = ch.time.saturating_sub(REVEAL_LOOP_SPEED);
                     reveal_complete = false;
                 } else {
+                    set_foreground_color(&self.args.foreground_color)?;
                     print!("{}", ch.source);
+                    reset_colors()?;
                 }
             }
 
