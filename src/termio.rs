@@ -21,10 +21,10 @@ pub fn disable_raw_mode() -> io::Result<()> {
 fn spawn_event_listener() {
     thread::spawn(move || {
         loop {
-            if event::poll(Duration::from_millis(100)).unwrap_or(false) {
-                if let Ok(Event::Key(ev)) = event::read() {
-                    check_interrupt(&ev);
-                }
+            if event::poll(Duration::from_millis(100)).unwrap_or(false)
+                && let Ok(Event::Key(ev)) = event::read()
+            {
+                check_interrupt(&ev);
             }
         }
     });
@@ -79,7 +79,7 @@ pub fn cursor_pos() -> io::Result<(u16, u16)> {
         Ok(pos) => Ok(pos),
         Err(e) => {
             eprintln!("cursor position failed: {e:?}");
-            return Err(e);
+            Err(e)
         }
     }
 }
