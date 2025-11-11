@@ -82,14 +82,8 @@ impl ElsEffect {
 
     fn print_mask(&self) -> io::Result<()> {
         for ch in self.char_list.iter() {
-            if ch.source.is_whitespace() {
-                if ch.source == '\n' {
-                    print!("\r\n");
-                    continue;
-                } else if !self.args.blank_masks {
-                    print!("{}", ch.source);
-                    continue;
-                }
+            if Self::handle_whitespace(&ch, self.args.blank_masks) {
+                continue;
             }
 
             print!("{}", ch.mask);
@@ -110,14 +104,8 @@ impl ElsEffect {
             move_cursor(self.orig_cursor_pos)?;
 
             for ch in self.char_list.iter() {
-                if ch.source.is_whitespace() {
-                    if ch.source == '\n' {
-                        print!("\r\n");
-                        continue;
-                    } else if !self.args.blank_masks {
-                        print!("{}", ch.source);
-                        continue;
-                    }
+                if Self::handle_whitespace(&ch, self.args.blank_masks) {
+                    continue;
                 }
 
                 print!("{}", get_random_char());
@@ -141,14 +129,8 @@ impl ElsEffect {
 
             reveal_complete = true;
             for ch in self.char_list.iter_mut() {
-                if ch.source.is_whitespace() {
-                    if ch.source == '\n' {
-                        print!("\r\n");
-                        continue;
-                    } else if !self.args.blank_masks {
-                        print!("{}", ch.source);
-                        continue;
-                    }
+                if Self::handle_whitespace(&ch, self.args.blank_masks) {
+                    continue;
                 }
 
                 if !ch.time.is_zero() {
@@ -177,5 +159,20 @@ impl ElsEffect {
         }
 
         Ok(())
+    }
+
+    /// Returns `true` if the character was handled and should be skipped
+    fn handle_whitespace(ch: &CharAttr, blank_masks: bool) -> bool {
+        if ch.source.is_whitespace() {
+            if ch.source == '\n' {
+                print!("\r\n");
+                return true;
+            } else if !blank_masks {
+                print!("{}", ch.source);
+                return true;
+            }
+        }
+
+        false
     }
 }
