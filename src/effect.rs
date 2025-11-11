@@ -5,7 +5,7 @@ use crossterm::terminal;
 
 use crate::char_attr::CharAttr;
 use crate::charset::get_random_char;
-use crate::termio::{cursor_pos, flush_output, move_cursor, wait_for_input};
+use crate::termio::{clear_screen, cursor_pos, flush_output, move_cursor, wait_for_input};
 
 const AUTODECRYPT_INTERVAL: Duration = Duration::from_secs(1);
 const EFFECT_SPEED: Duration = Duration::from_millis(40);
@@ -23,7 +23,11 @@ impl ElsEffect {
     pub fn new(input: &str, args: crate::Args) -> io::Result<Self> {
         let mut char_list: Vec<CharAttr> = vec![];
         let terminal_size = terminal::size()?;
-        let mut orig_cursor_pos = cursor_pos()?;
+        let mut orig_cursor_pos = if args.clear_screen {
+            (0, 0)
+        } else {
+            cursor_pos()?
+        };
 
         let mut cur_col = orig_cursor_pos.0;
         let mut cur_row = orig_cursor_pos.1;
@@ -60,6 +64,11 @@ impl ElsEffect {
     }
 
     pub fn run(&mut self) -> io::Result<()> {
+        if self.args.clear_screen {
+            clear_screen()?;
+            move_cursor((0, 0))?;
+        }
+
         self.print_mask()?;
         if self.args.auto_decrypt {
             thread::sleep(AUTODECRYPT_INTERVAL)

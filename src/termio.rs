@@ -3,6 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::terminal::ClearType;
 use crossterm::{ExecutableCommand, event};
 use crossterm::{cursor, terminal};
 
@@ -82,4 +83,13 @@ pub fn cursor_pos() -> io::Result<(u16, u16)> {
             Err(e)
         }
     }
+}
+
+pub fn clear_screen() -> io::Result<()> {
+    if let Err(e) = io::stdout().execute(terminal::Clear(ClearType::All)) {
+        eprintln!("screen clear failed: {e:?}");
+        return Err(e);
+    };
+
+    Ok(())
 }
