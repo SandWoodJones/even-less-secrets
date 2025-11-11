@@ -82,7 +82,7 @@ impl ElsEffect {
 
     fn print_mask(&self) -> io::Result<()> {
         for ch in self.char_list.iter() {
-            if Self::handle_whitespace(&ch, self.args.blank_masks) {
+            if Self::handle_whitespace(ch, self.args.blank_masks) {
                 continue;
             }
 
@@ -104,7 +104,7 @@ impl ElsEffect {
             move_cursor(self.orig_cursor_pos)?;
 
             for ch in self.char_list.iter() {
-                if Self::handle_whitespace(&ch, self.args.blank_masks) {
+                if Self::handle_whitespace(ch, self.args.blank_masks) {
                     continue;
                 }
 
@@ -129,7 +129,7 @@ impl ElsEffect {
 
             reveal_complete = true;
             for ch in self.char_list.iter_mut() {
-                if Self::handle_whitespace(&ch, self.args.blank_masks) {
+                if Self::handle_whitespace(ch, self.args.blank_masks) {
                     continue;
                 }
 
