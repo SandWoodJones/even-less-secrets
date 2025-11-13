@@ -1,5 +1,3 @@
-// https://jwodder.github.io/kbits/posts/clap-bool-negate/
-
 use std::io::{self, Read, Write};
 
 use clap::Parser;

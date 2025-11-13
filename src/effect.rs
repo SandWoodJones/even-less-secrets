@@ -5,13 +5,10 @@ use crossterm::terminal;
 
 use crate::char_attr::CharAttr;
 use crate::charset::get_random_char;
-use crate::termio::{clear_screen, cursor_pos, flush_output, move_cursor, reset_colors, set_foreground_color, wait_for_input};
-
-const AUTODECRYPT_INTERVAL: Duration = Duration::from_secs(1);
-const EFFECT_SPEED: Duration = Duration::from_millis(40);
-const JUMBLE_SECONDS: Duration = Duration::from_secs(2);
-const JUMBLE_LOOP_SPEED: Duration = Duration::from_millis(35);
-const REVEAL_LOOP_SPEED: Duration = Duration::from_millis(50);
+use crate::termio::{
+    clear_screen, cursor_pos, flush_output, move_cursor, reset_colors, set_foreground_color,
+    wait_for_input,
+};
 
 pub struct ElsEffect {
     args: crate::Args,
@@ -39,7 +36,7 @@ impl ElsEffect {
                 break;
             }
 
-            let attr = CharAttr::new(ch);
+            let attr = CharAttr::new(ch, args.reveal_duration);
             if let Some(w) = attr.width {
                 cur_col += w;
             }
@@ -70,10 +67,10 @@ impl ElsEffect {
         }
 
         self.print_mask()?;
-        if self.args.auto_decrypt {
-            thread::sleep(AUTODECRYPT_INTERVAL)
-        } else {
+        if self.args.auto_decrypt < 0 {
             wait_for_input()?;
+        } else {
+            thread::sleep(Duration::from_millis(self.args.auto_decrypt as u64));
         }
 
         self.jumble()?;
@@ -93,14 +90,14 @@ impl ElsEffect {
 
             flush_output()?;
 
-            thread::sleep(EFFECT_SPEED);
+            thread::sleep(Duration::from_millis(self.args.type_speed));
         }
 
         Ok(())
     }
 
     fn jumble(&self) -> io::Result<()> {
-        for _ in 0..(JUMBLE_SECONDS.as_millis() / JUMBLE_LOOP_SPEED.as_millis()) {
+        for _ in 0..(self.args.jumble_duration / self.args.jumble_speed) {
             move_cursor(self.orig_cursor_pos)?;
 
             for ch in self.char_list.iter() {
@@ -116,14 +113,16 @@ impl ElsEffect {
 
             flush_output()?;
 
-            thread::sleep(JUMBLE_LOOP_SPEED);
+            thread::sleep(Duration::from_millis(self.args.jumble_speed));
         }
 
         Ok(())
     }
 
     fn reveal(&mut self) -> io::Result<()> {
+        let speed_duration = Duration::from_millis(self.args.reveal_speed);
         let mut reveal_complete = false;
+
         while !reveal_complete {
             move_cursor(self.orig_cursor_pos)?;
 
@@ -134,7 +133,7 @@ impl ElsEffect {
                 }
 
                 if !ch.time.is_zero() {
-                    if ch.time.as_millis() < 500 {
+                    if ch.time.as_millis() < (self.args.reveal_duration / 10) as u128 {
                         if fastrand::u8(0..3) == 0 {
                             ch.mask = get_random_char();
                         }
@@ -147,7 +146,7 @@ impl ElsEffect {
                         print!("{}", get_random_char())
                     }
 
-                    ch.time = ch.time.saturating_sub(REVEAL_LOOP_SPEED);
+                    ch.time = ch.time.saturating_sub(speed_duration);
                     reveal_complete = false;
                 } else {
                     set_foreground_color(&self.args.foreground_color)?;
@@ -157,7 +156,7 @@ impl ElsEffect {
             }
 
             flush_output()?;
-            thread::sleep(REVEAL_LOOP_SPEED);
+            thread::sleep(speed_duration);
         }
 
         Ok(())
