@@ -14,15 +14,6 @@ const DEFAULT_REVEAL_SPEED: u64 = 50;
 #[command(version, about, long_about = None)]
 pub struct Args {
     #[arg(
-        short = 'a',
-        long,
-        value_name = "MILLIS",
-        default_value_t = DEFAULT_AUTODECRYPT_INTERVAL,
-        help = format!("The delay before starting the decrypting sequence.\nA negative value will make the program wait for user input")
-    )]
-    pub auto_decrypt: i64,
-
-    #[arg(
         short = 's',
         long,
         overrides_with = "_no_blank_masks",
@@ -50,6 +41,16 @@ pub struct Args {
         help = "The foreground color of the decrypted text.\nAccepts any of the 16 standard ANSI colors or, if supported by the terminal, a hexadecimal RGB color code"
     )]
     pub foreground_color: Color,
+
+    #[arg(
+        short = 'a',
+        long,
+        value_name = "MILLIS",
+        default_value_t = DEFAULT_AUTODECRYPT_INTERVAL,
+        help = format!("The delay before starting the decrypting sequence.\nA negative value will make the program wait for user input"),
+        help_heading = "Settings"
+    )]
+    pub decrypt_delay: i64,
 
     #[arg(
         long,

@@ -3,7 +3,7 @@ authors = ["SandWood Jones <sandwoodjones@outlook.com>"]
 edition = "2024"
 name = "even-less-secrets"
 description = "NMS rewritten in Rust"
-version = "1.0.0"
+version = "1.0.1"
 
 [profile.release]
 lto = true
