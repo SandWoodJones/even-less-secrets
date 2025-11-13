@@ -18,5 +18,12 @@
       systems = import inputs.systems;
 
       imports = with builtins; map (fn: ./nix/modules/${fn}) (attrNames (readDir ./nix/modules));
+
+      flake = {
+        meta = {
+          homepage = "https://github.com/SandWoodJones/even-less-secrets";
+          license = "GPL-3.0";
+        };
+      };
     };
 }

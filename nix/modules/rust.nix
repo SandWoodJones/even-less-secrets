@@ -22,7 +22,11 @@
         );
       };
 
-      packages.default = self'.packages.even-less-secrets;
+      packages.default = self'.packages.even-less-secrets.overrideAttrs (old: {
+        meta = (old.meta or {}) // {
+          mainProgram = "els";
+        };
+      });
       apps.default = {
         type = "app";
         program = "${self'.packages.default}/bin/els";
