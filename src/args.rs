@@ -3,7 +3,7 @@ use clap::ArgAction;
 
 use crate::color::Color;
 
-const DEFAULT_AUTODECRYPT_INTERVAL: i64 = 1000;
+const DEFAULT_AUTODECRYPT_DELAY: &str = "1000";
 const DEFAULT_TYPE_EFFECT_SPEED: u64 = 4;
 const DEFAULT_JUMBLE_DURATION: u64 = 2000;
 const DEFAULT_JUMBLE_SPEED: u64 = 35;
@@ -13,6 +13,16 @@ const DEFAULT_REVEAL_SPEED: u64 = 50;
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    #[arg(
+        short = 'a',
+        long,
+        value_name = "MILLIS",
+        num_args = 0..=1,
+        default_missing_value = DEFAULT_AUTODECRYPT_DELAY,
+        help = format!("Start decrypting sequence after a delay [default: {}].\nIf not specified, wait for user input", DEFAULT_AUTODECRYPT_DELAY)
+    )]
+    pub auto_decrypt: Option<u64>,
+
     #[arg(
         short = 's',
         long,
@@ -41,16 +51,6 @@ pub struct Args {
         help = "The foreground color of the decrypted text.\nAccepts any of the 16 standard ANSI colors or, if supported by the terminal, a hexadecimal RGB color code"
     )]
     pub foreground_color: Color,
-
-    #[arg(
-        short = 'a',
-        long,
-        value_name = "MILLIS",
-        default_value_t = DEFAULT_AUTODECRYPT_INTERVAL,
-        help = format!("The delay before starting the decrypting sequence.\nA negative value will make the program wait for user input"),
-        help_heading = "Settings"
-    )]
-    pub decrypt_delay: i64,
 
     #[arg(
         long,

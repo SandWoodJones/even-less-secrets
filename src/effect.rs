@@ -67,10 +67,10 @@ impl ElsEffect {
         }
 
         self.print_mask()?;
-        if self.args.decrypt_delay < 0 {
-            wait_for_input()?;
+        if let Some(delay) = self.args.auto_decrypt {
+            thread::sleep(Duration::from_millis(delay));
         } else {
-            thread::sleep(Duration::from_millis(self.args.decrypt_delay as u64));
+            wait_for_input()?;
         }
 
         self.jumble()?;
