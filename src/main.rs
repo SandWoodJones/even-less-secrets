@@ -17,6 +17,7 @@ mod termio;
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
+    termio::set_quiet(args.quiet);
 
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;

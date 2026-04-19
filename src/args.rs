@@ -53,6 +53,13 @@ pub struct Args {
     pub foreground_color: Color,
 
     #[arg(
+        short = 'q',
+        long,
+        help = "Suppress all error output"
+    )]
+    pub quiet: bool,
+
+    #[arg(
         long,
         value_name = "MILLIS",
         default_value_t = DEFAULT_TYPE_EFFECT_SPEED,

@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -8,6 +9,20 @@ use crossterm::{ExecutableCommand, event, style};
 use crossterm::{cursor, terminal};
 
 use crate::color::Color;
+
+static QUIET: AtomicBool = AtomicBool::new(false);
+
+macro_rules! eprint_unless_quiet {
+    ($($arg:tt)*) => {
+        if !QUIET.load(Ordering::Relaxed) {
+            eprintln!($($arg)*);
+        }
+    }
+}
+
+pub fn set_quiet(quiet: bool) {
+    QUIET.store(quiet, Ordering::Relaxed);
+}
 
 pub fn enable_raw_mode() -> io::Result<()> {
     terminal::enable_raw_mode()?;
@@ -61,7 +76,7 @@ fn check_interrupt(event: &KeyEvent) {
 
 pub fn flush_output() -> io::Result<()> {
     if let Err(e) = io::stdout().flush() {
-        eprintln!("flush failed: {e:?}");
+        eprint_unless_quiet!("flush failed: {e:?}");
         return Err(e);
     }
 
@@ -70,7 +85,7 @@ pub fn flush_output() -> io::Result<()> {
 
 pub fn move_cursor(pos: (u16, u16)) -> io::Result<()> {
     if let Err(e) = io::stdout().execute(cursor::MoveTo(pos.0, pos.1)) {
-        eprintln!("cursor move failed: {e:?}");
+        eprint_unless_quiet!("cursor move failed: {e:?}");
         return Err(e);
     };
 
@@ -81,7 +96,7 @@ pub fn cursor_pos() -> io::Result<(u16, u16)> {
     match cursor::position() {
         Ok(pos) => Ok(pos),
         Err(e) => {
-            eprintln!("cursor position failed: {e:?}");
+            eprint_unless_quiet!("cursor position failed: {e:?}");
             Err(e)
         }
     }
@@ -89,7 +104,7 @@ pub fn cursor_pos() -> io::Result<(u16, u16)> {
 
 pub fn clear_screen() -> io::Result<()> {
     if let Err(e) = io::stdout().execute(terminal::Clear(ClearType::All)) {
-        eprintln!("screen clear failed: {e:?}");
+        eprint_unless_quiet!("screen clear failed: {e:?}");
         return Err(e);
     };
 
@@ -98,7 +113,7 @@ pub fn clear_screen() -> io::Result<()> {
 
 pub fn set_foreground_color(color: &Color) -> io::Result<()> {
     if let Err(e) = io::stdout().execute(style::SetForegroundColor(color.0)) {
-        eprintln!("setting foreground color failed: {e:?}");
+        eprint_unless_quiet!("setting foreground color failed: {e:?}");
         return Err(e);
     };
 
@@ -107,7 +122,7 @@ pub fn set_foreground_color(color: &Color) -> io::Result<()> {
 
 pub fn reset_colors() -> io::Result<()> {
     if let Err(e) = io::stdout().execute(style::ResetColor) {
-        eprintln!("resetting colors to default failed: {e:?}");
+        eprint_unless_quiet!("resetting colors to default failed: {e:?}");
         return Err(e);
     };
 
